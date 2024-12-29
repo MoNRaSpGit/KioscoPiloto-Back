@@ -1,9 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { authenticateToken, authorize } = require("./middlewares/auth");
+
 const db = require("./db"); // Importa la conexión a la base de datos
 
 const app = express();
