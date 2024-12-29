@@ -38,84 +38,43 @@ app.get("/api/products", (req, res) => {
   });
 });
 
-// Registro de usuario con rol
-app.post("/api/register", async (req, res) => {
+// Registro de usuario (sin bcrypt)
+app.post("/api/register", (req, res) => {
   const { name, email, password, role } = req.body;
 
-  console.log("Solicitud POST recibida en '/api/register' con datos:", req.body); // Log de datos
-
-  try {
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+  db.query(
+    "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+    [name, email, password, role || "user"],
+    (err, results) => {
       if (err) {
-        console.error("Error al verificar el usuario:", err);
-        return res.status(500).json({ error: "Error al verificar el usuario." });
+        console.error("Error al registrar el usuario:", err);
+        return res.status(500).json({ error: "Error al registrar el usuario." });
       }
-
-      if (results.length > 0) {
-        return res.status(400).json({ error: "El usuario ya existe." });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      db.query(
-        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-        [name, email, hashedPassword, role || "user"],
-        (err, results) => {
-          if (err) {
-            console.error("Error al registrar el usuario:", err);
-            return res.status(500).json({ error: "Error al registrar el usuario." });
-          }
-
-          console.log("Usuario registrado con éxito:", { name, email, role });
-          res.status(201).json({ message: "Usuario registrado con éxito." });
-        }
-      );
-    });
-  } catch (error) {
-    console.error("Error interno del servidor:", error);
-    res.status(500).json({ error: "Error interno del servidor." });
-  }
+      res.status(201).json({ message: "Usuario registrado con éxito." });
+    }
+  );
 });
 
-// Login de usuario
-app.post("/api/login", async (req, res) => {
+
+
+
+// Login de usuario (sin bcrypt)
+app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
-  console.log("Solicitud POST recibida en '/api/login' con datos:", { email }); // Log de datos
+  db.query("SELECT * FROM users WHERE email = ? AND password = ?", [email, password], (err, results) => {
+    if (err) {
+      console.error("Error al buscar el usuario:", err);
+      return res.status(500).json({ error: "Error interno del servidor." });
+    }
 
-  try {
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-      if (err) {
-        console.error("Error al buscar el usuario:", err);
-        return res.status(500).json({ error: "Error interno del servidor." });
-      }
+    if (results.length === 0) {
+      return res.status(401).json({ error: "Correo o contraseña incorrectos." });
+    }
 
-      if (results.length === 0) {
-        console.warn("Credenciales inválidas para el correo:", email);
-        return res.status(401).json({ error: "Correo o contraseña incorrectos." });
-      }
-
-      const user = results[0];
-      const isMatch = await bcrypt.compare(password, user.password);
-
-      if (!isMatch) {
-        console.warn("Contraseña incorrecta para el usuario:", email);
-        return res.status(401).json({ error: "Correo o contraseña incorrectos." });
-      }
-
-      const token = jwt.sign(
-        { id: user.id, role: user.role },
-        process.env.JWT_SECRET || "secret",
-        { expiresIn: "1h" }
-      );
-
-      console.log("Login exitoso para el usuario:", email);
-      res.json({ message: "Login exitoso.", token, role: user.role });
-    });
-  } catch (error) {
-    console.error("Error interno del servidor:", error);
-    res.status(500).json({ error: "Error interno del servidor." });
-  }
+    const user = results[0];
+    res.json({ message: "Login exitoso.", user });
+  });
 });
 
 // Configurar el puerto
