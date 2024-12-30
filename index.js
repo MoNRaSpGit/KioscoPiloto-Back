@@ -158,6 +158,31 @@ app.put("/api/orders/:id/status", async (req, res) => {
   }
 });
 
+
+/// Endpoint para eliminar un pedido
+app.delete('/api/orders/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Elimina detalles
+    await db.query('DELETE FROM order_details WHERE order_id = ?', [id]);
+
+    // Elimina pedido
+    await db.query('DELETE FROM orders WHERE id = ?', [id]);
+
+    console.log(`Pedido ${id} eliminado correctamente.`);
+    res.json({ message: 'Pedido eliminado con éxito.' });
+
+  } catch (err) {
+    console.error(`Error al eliminar el pedido ${id}:`, err);
+    res.status(500).json({ error: 'Error al eliminar el pedido.' });
+  }
+});
+
+
+
+
+
 // Configurar el puerto
 const PORT = process.env.PORT || 3001;
 
