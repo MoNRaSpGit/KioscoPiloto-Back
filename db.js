@@ -9,7 +9,7 @@ const db = mysql.createPool({
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 10, // Ajusta según el límite máximo permitido
 });
 
 db.getConnection((err) => {
@@ -21,5 +21,4 @@ db.getConnection((err) => {
   }
 });
 
-
-module.exports = db;
+module.exports = db.promise(); // Exporta el pool con soporte para promesas
