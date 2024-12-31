@@ -37,15 +37,23 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-// Registro de usuario (sin bcrypt)
+
+
+// Registro de usuario
 app.post("/api/register", async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, password, direccion } = req.body;
 
   try {
+    // Validar los campos requeridos
+    if (!name || !password || !direccion) {
+      return res.status(400).json({ error: "Todos los campos son obligatorios." });
+    }
+
     const [results] = await db.query(
-      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-      [name, email, password, role || "user"]
+      "INSERT INTO users (name, password, direccion, role) VALUES (?, ?, ?, ?)",
+      [name, password, direccion, "user"] // Rol siempre será 'user'
     );
+
     res.status(201).json({ message: "Usuario registrado con éxito." });
   } catch (err) {
     console.error("Error al registrar el usuario:", err);
@@ -53,27 +61,37 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
-// Login de usuario (sin bcrypt)
+
+
+// Login de usuario
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { name, password } = req.body;
 
   try {
+    // Validar los campos requeridos
+    if (!name || !password) {
+      return res.status(400).json({ error: "Nombre y contraseña son obligatorios." });
+    }
+
     const [results] = await db.query(
-      "SELECT * FROM users WHERE email = ? AND password = ?",
-      [email, password]
+      "SELECT * FROM users WHERE name = ? AND password = ?",
+      [name, password]
     );
 
     if (results.length === 0) {
-      return res.status(401).json({ error: "Correo o contraseña incorrectos." });
+      return res.status(401).json({ error: "Nombre o contraseña incorrectos." });
     }
 
-    const user = results[0];
+    const user = results[0]; // Extraer al usuario encontrado
     res.json({ message: "Login exitoso.", user });
   } catch (err) {
     console.error("Error al buscar el usuario:", err);
     res.status(500).json({ error: "Error interno del servidor." });
   }
 });
+
+
+
 
 // Endpoint para registrar un pedido
 app.post("/api/orders", async (req, res) => {
