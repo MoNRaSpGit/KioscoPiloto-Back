@@ -8,9 +8,9 @@ const app = express();
 
 // Configuración de CORS
 const corsOptions = {
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
+  origin: ["http://localhost:3000", "https://monraspgit.github.io/MercadoYa"], // Permitir localhost y la URL de producción
+  methods: ["GET", "POST", "PUT", "DELETE"], // Métodos HTTP permitidos
+  credentials: true, // Permitir cookies o encabezados de autenticación
 };
 app.use(cors(corsOptions));
 
