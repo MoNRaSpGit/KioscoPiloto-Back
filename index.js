@@ -181,6 +181,26 @@ app.delete('/api/orders/:id', async (req, res) => {
 
 
 
+// Endpoint para agregar un producto
+app.post("/api/products", async (req, res) => {
+  const { name, price, barcode } = req.body; // Eliminamos `image` de los datos requeridos
+
+  try {
+    const [result] = await db.query(
+      "INSERT INTO products (name, price, image, barcode) VALUES (?, ?, NULL, ?)",
+      [name, price, barcode] // Pasamos NULL para `image`
+    );
+    res.status(201).json({ message: "Producto agregado con éxito.", id: result.insertId });
+  } catch (err) {
+    console.error("Error al agregar el producto:", err);
+    res.status(500).json({ error: "Error al agregar el producto." });
+  }
+});
+
+
+
+
+
 
 
 // Configurar el puerto
