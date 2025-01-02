@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
+const webPush = require("web-push");
 
 const db = require("./db"); // Importa la conexión a la base de datos
 
@@ -38,6 +39,45 @@ io.on("connection", (socket) => {
 });
 
 module.exports = { app, server };
+
+
+//-----  NOTIFICACIONES PUSH
+
+// Configurar las claves VAPID
+webPush.setVapidDetails(
+  "mailto:ju4nrsuarez@gmail.com", // Cambia esto por tu email
+  process.env.VAPID_PUBLIC_KEY, // Clave pública (colócala en tu .env)
+  process.env.VAPID_PRIVATE_KEY // Clave privada (colócala en tu .env)
+);
+
+const subscriptions = []; // Almacena temporalmente las suscripciones (puedes usar tu base de datos)
+
+// Endpoint para registrar una suscripción
+app.post("/subscribe", (req, res) => {
+  const subscription = req.body;
+  subscriptions.push(subscription); // Agrega la suscripción a la lista
+  res.status(201).json({ message: "Suscripción registrada con éxito" });
+});
+
+// Endpoint para enviar una notificación
+app.post("/send-notification", (req, res) => {
+  const { title, message } = req.body;
+
+  const payload = JSON.stringify({
+    title,
+    message,
+  });
+
+  subscriptions.forEach((subscription) => {
+    webPush
+      .sendNotification(subscription, payload)
+      .catch((error) => console.error("Error al enviar notificación:", error));
+  });
+
+  res.status(200).json({ message: "Notificación enviada" });
+});
+
+
 
 
 
@@ -221,3 +261,5 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+
