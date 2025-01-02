@@ -54,10 +54,11 @@ const subscriptions = []; // Almacena temporalmente las suscripciones (puedes us
 
 // Endpoint para registrar una suscripción
 app.post("/subscribe", (req, res) => {
-  const subscription = req.body;
-  subscriptions.push(subscription); // Agrega la suscripción a la lista
+  console.log("Suscripción recibida en el backend:", req.body); // Log para verificar
+  subscriptions.push(req.body);
   res.status(201).json({ message: "Suscripción registrada con éxito" });
 });
+
 
 // Endpoint para enviar una notificación
 app.post("/send-notification", (req, res) => {
@@ -77,6 +78,15 @@ app.post("/send-notification", (req, res) => {
   res.status(200).json({ message: "Notificación enviada" });
 });
 
+const path = require("path");
+
+// Servir archivos estáticos desde "public"
+app.use(express.static(path.join(__dirname, "public")));
+
+// Asegurar que el archivo "sw.js" se sirva correctamente
+app.get("/sw.js", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "sw.js"));
+});
 
 
 
