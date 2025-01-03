@@ -54,20 +54,8 @@ const subscriptions = []; // Almacena temporalmente las suscripciones (puedes us
 
 // Endpoint para registrar una suscripción
 app.post("/subscribe", (req, res) => {
-  const newSubscription = req.body;
-
-  // Verifica si la suscripción ya existe
-  const subscriptionExists = subscriptions.some(
-    (sub) => sub.endpoint === newSubscription.endpoint
-  );
-
-  if (subscriptionExists) {
-    console.log("Suscripción ya registrada.");
-    return res.status(200).json({ message: "Suscripción ya existe" });
-  }
-
-  subscriptions.push(newSubscription);
-  console.log("Suscripción registrada:", newSubscription);
+  console.log("Suscripción recibida en el backend:", req.body); // Log para verificar
+  subscriptions.push(req.body);
   res.status(201).json({ message: "Suscripción registrada con éxito" });
 });
 
@@ -76,7 +64,10 @@ app.post("/subscribe", (req, res) => {
 app.post("/send-notification", (req, res) => {
   const { title, message } = req.body;
 
-  const payload = JSON.stringify({ title, message });
+  const payload = JSON.stringify({
+    title,
+    message,
+  });
 
   subscriptions.forEach((subscription, index) => {
     webPush
@@ -84,7 +75,6 @@ app.post("/send-notification", (req, res) => {
       .then(() => console.log(`Notificación enviada a la suscripción ${index}`))
       .catch((error) => {
         console.error(`Error al enviar notificación a la suscripción ${index}:`, error);
-
         // Elimina suscripciones inválidas
         if (error.statusCode === 410) {
           console.log("Eliminando suscripción inválida.");
@@ -95,7 +85,6 @@ app.post("/send-notification", (req, res) => {
 
   res.status(200).json({ message: "Notificación enviada a todos los usuarios" });
 });
-
 
 
 
