@@ -65,26 +65,23 @@ app.post("/send-notification", (req, res) => {
   const { title, message } = req.body;
 
   const payload = JSON.stringify({
-    title,
-    message,
+    title: title || "¡Notificación de MercadoYa!",
+    message: message || "Tienes un mensaje nuevo en tu cuenta.",
   });
 
-  subscriptions.forEach((subscription, index) => {
+  subscriptions.forEach((subscription) => {
     webPush
       .sendNotification(subscription, payload)
-      .then(() => console.log(`Notificación enviada a la suscripción ${index}`))
+      .then(() => console.log("Notificación enviada con éxito"))
       .catch((error) => {
-        console.error(`Error al enviar notificación a la suscripción ${index}:`, error);
-        // Elimina suscripciones inválidas
-        if (error.statusCode === 410) {
-          console.log("Eliminando suscripción inválida.");
-          subscriptions.splice(index, 1);
-        }
+        console.error("Error al enviar notificación:", error);
+        // Manejo de errores (por ejemplo, eliminar suscripciones inválidas)
       });
   });
 
   res.status(200).json({ message: "Notificación enviada a todos los usuarios" });
 });
+
 
 
 const path = require("path");
