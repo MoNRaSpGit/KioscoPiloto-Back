@@ -69,14 +69,23 @@ app.post("/send-notification", (req, res) => {
     message,
   });
 
-  subscriptions.forEach((subscription) => {
+  subscriptions.forEach((subscription, index) => {
     webPush
       .sendNotification(subscription, payload)
-      .catch((error) => console.error("Error al enviar notificación:", error));
+      .then(() => console.log(`Notificación enviada a la suscripción ${index}`))
+      .catch((error) => {
+        console.error(`Error al enviar notificación a la suscripción ${index}:`, error);
+        // Elimina suscripciones inválidas
+        if (error.statusCode === 410) {
+          console.log("Eliminando suscripción inválida.");
+          subscriptions.splice(index, 1);
+        }
+      });
   });
 
-  res.status(200).json({ message: "Notificación enviada" });
+  res.status(200).json({ message: "Notificación enviada a todos los usuarios" });
 });
+
 
 const path = require("path");
 
