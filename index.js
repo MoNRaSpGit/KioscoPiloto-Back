@@ -20,7 +20,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware para parsear JSON
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Configuración de WebSockets
 const io = new Server(server, {
@@ -101,6 +102,93 @@ app.get("/sw.js", (req, res) => {
 
 
 
+// Endpoint para obtener un producto por código de barras
+app.get('/api/products/:barcode', async (req, res) => {
+  const { barcode } = req.params;
+
+  try {
+    const query = `SELECT * FROM products WHERE barcode = ?`;
+    const [results] = await db.query(query, [barcode]);
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    const product = results[0];
+
+    // Convertir price a número para evitar problemas en el frontend
+    product.price = parseFloat(product.price);
+
+    res.json(product);
+  } catch (err) {
+    console.error('Error al obtener el producto:', err);
+    res.status(500).json({ error: 'Error al obtener el producto.' });
+  }
+});
+
+ // Endpoint para editar un producto
+app.put('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, barcode, price, image, description } = req.body;
+
+  try {
+    const query = `
+      UPDATE products
+      SET name = ?, barcode = ?, price = ?, image = ?, description = ?
+      WHERE id = ?
+    `;
+    const [result] = await db.query(query, [name, barcode, price, image, description, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    res.json({ message: 'Producto editado con éxito.' });
+  } catch (err) {
+    console.error('Error al editar el producto:', err);
+    res.status(500).json({ error: 'Error al editar el producto.' });
+  }
+});
+
+
+// Endpoint para guardar un producto con imagen
+app.post("/api/products", async (req, res) => {
+  const { name, barcode, price, image } = req.body;
+
+  if (!name || !barcode || !price || !image) {
+    return res.status(400).json({ error: "Todos los campos son obligatorios." });
+  }
+
+  try {
+    const query = `
+      INSERT INTO products (name, barcode, price, image)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    const [result] = await db.query(query, [name, barcode, price, image]);
+    res.status(201).json({ message: "Producto guardado con éxito.", productId: result.insertId });
+  } catch (err) {
+    console.error("Error al guardar el producto:", err);
+    res.status(500).json({ error: "Error al guardar el producto." });
+  }
+});
+
+// Endpoint para obtener productos
+app.get("/api/products", async (req, res) => {
+  console.log("Solicitud GET recibida en '/api/products'");
+
+  try {
+    const [results] = await db.query("SELECT * FROM products");
+    console.log("Productos obtenidos correctamente:", results);
+    res.json(results);
+  } catch (err) {
+    console.error("Error al obtener los productos:", err);
+    res.status(500).json({ error: "Error al obtener los productos." });
+  }
+});
+
+
+
 
 
 
@@ -148,19 +236,7 @@ app.get("/", (req, res) => {
   res.send("Bienvenido al backend de MercadoYa!");
 });
 
-// Endpoint para obtener productos
-app.get("/api/products", async (req, res) => {
-  console.log("Solicitud GET recibida en '/api/products'");
 
-  try {
-    const [results] = await db.query("SELECT * FROM products");
-    console.log("Productos obtenidos correctamente:", results);
-    res.json(results);
-  } catch (err) {
-    console.error("Error al obtener los productos:", err);
-    res.status(500).json({ error: "Error al obtener los productos." });
-  }
-});
 
 // Registro de usuario
 app.post("/api/register", async (req, res) => {
