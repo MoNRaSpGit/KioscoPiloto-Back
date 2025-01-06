@@ -151,6 +151,33 @@ app.put('/api/products/:id', async (req, res) => {
 });
 
 
+
+
+// Endpoint para eliminar un producto
+app.delete('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Eliminar el producto por ID
+    const query = `DELETE FROM products WHERE id = ?`;
+    const [result] = await db.query(query, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    res.json({ message: 'Producto eliminado con éxito.' });
+  } catch (err) {
+    console.error('Error al eliminar el producto:', err);
+    res.status(500).json({ error: 'Error al eliminar el producto.' });
+  }
+});
+
+
+
+
+
+
 // Endpoint para guardar un producto con imagen
 app.post("/api/products", async (req, res) => {
   const { name, barcode, price, description, image } = req.body;
@@ -204,7 +231,7 @@ app.get("/api/products", async (req, res) => {
 
 
 
-
+/*
 // Endpoint para obtener pedidos
 app.get("/api/orders", async (req, res) => {
   console.log("Solicitud GET recibida en '/api/orders'");
@@ -238,7 +265,7 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
-
+*/
 
 
 
