@@ -153,19 +153,25 @@ app.put('/api/products/:id', async (req, res) => {
 
 // Endpoint para guardar un producto con imagen
 app.post("/api/products", async (req, res) => {
-  const { name, barcode, price, image } = req.body;
+  const { name, barcode, price, description, image } = req.body;
 
-  if (!name || !barcode || !price || !image) {
-    return res.status(400).json({ error: "Todos los campos son obligatorios." });
+  if (!name || !barcode) {
+    return res.status(400).json({ error: "El nombre y el código de barras son obligatorios." });
   }
 
   try {
     const query = `
-      INSERT INTO products (name, barcode, price, image)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO products (name, barcode, price, description, image)
+      VALUES (?, ?, ?, ?, ?)
     `;
+    const [result] = await db.query(query, [
+      name,
+      barcode,
+      price || 0, // Valor predeterminado
+      description || "", // Cadena vacía si no hay descripción
+      image || null, // null si no hay imagen
+    ]);
 
-    const [result] = await db.query(query, [name, barcode, price, image]);
     res.status(201).json({ message: "Producto guardado con éxito.", productId: result.insertId });
   } catch (err) {
     console.error("Error al guardar el producto:", err);
@@ -173,19 +179,26 @@ app.post("/api/products", async (req, res) => {
   }
 });
 
+
 // Endpoint para obtener productos
 app.get("/api/products", async (req, res) => {
-  console.log("Solicitud GET recibida en '/api/products'");
-
   try {
     const [results] = await db.query("SELECT * FROM products");
-    console.log("Productos obtenidos correctamente:", results);
-    res.json(results);
+
+    const products = results.map((product) => ({
+      ...product,
+      price: product.price || 0, // Precio predeterminado
+      description: product.description || "", // Descripción predeterminada
+      image: product.image || null, // Imagen predeterminada
+    }));
+
+    res.json(products);
   } catch (err) {
     console.error("Error al obtener los productos:", err);
     res.status(500).json({ error: "Error al obtener los productos." });
   }
 });
+
 
 
 
