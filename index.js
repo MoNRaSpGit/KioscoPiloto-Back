@@ -231,7 +231,7 @@ app.get("/api/products", async (req, res) => {
 
 
 
-/*
+
 // Endpoint para obtener pedidos
 app.get("/api/orders", async (req, res) => {
   console.log("Solicitud GET recibida en '/api/orders'");
@@ -265,7 +265,7 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
-*/
+
 
 
 
