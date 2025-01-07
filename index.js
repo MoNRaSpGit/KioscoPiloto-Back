@@ -362,7 +362,8 @@ app.post("/api/orders", async (req, res) => {
       status: "Pendiente",
     };
 
-    io.emit("new_order", newOrder); // Emitir evento de nueva orden
+    // Emitir evento de nueva orden
+    io.emit("new_order", newOrder);
     console.log("Nueva orden emitida por WebSocket:", newOrder);
 
     res.status(201).json({ message: "Pedido registrado con éxito.", orderId });
@@ -371,6 +372,7 @@ app.post("/api/orders", async (req, res) => {
     res.status(500).json({ error: "Error al registrar el pedido." });
   }
 });
+
 
 // Endpoint para actualizar el estado del pedido
 app.put("/api/orders/:id/status", async (req, res) => {
@@ -388,14 +390,17 @@ app.put("/api/orders/:id/status", async (req, res) => {
       return res.status(404).json({ error: "Pedido no encontrado." });
     }
 
-    io.emit("order_status_updated", { id, status }); // Emitir evento de actualización de estado
+    // Emitir evento de actualización de estado
+    io.emit("order_status_updated", { id, status });
     console.log(`Estado del pedido ${id} actualizado a ${status}`);
+
     res.json({ message: "Estado actualizado con éxito.", status });
   } catch (err) {
     console.error(`Error al actualizar el estado del pedido ${id}:`, err);
     res.status(500).json({ error: "Error al actualizar el estado del pedido." });
   }
 });
+
 
 // Configurar el puerto
 const PORT = process.env.PORT || 3001;
