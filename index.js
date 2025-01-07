@@ -12,11 +12,13 @@ const server = http.createServer(app);
 
 // Configuración de CORS
 const corsOptions = {
-  origin: "*", // Permitir cualquier origen
-  methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos
-  allowedHeaders: ["Content-Type", "Authorization"], // Cabeceras permitidas
-  credentials: true, // Permitir envío de credenciales (cookies, auth headers, etc.)
+  origin: ["https://monraspgit.github.io"], // Lista blanca de dominios permitidos
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 };
+
+
 app.use(cors(corsOptions));
 
 // Middleware para parsear JSON
@@ -26,10 +28,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Configuración de WebSockets
 const io = new Server(server, {
   cors: {
-    origin: "*", // Permitir cualquier origen para WebSockets
+    origin: "https://monraspgit.github.io", // Dominio permitido
     methods: ["GET", "POST"], // Métodos permitidos
   },
 });
+
+
+
 
 io.on("connection", (socket) => {
   console.log("Cliente conectado:", socket.id);
