@@ -363,14 +363,7 @@ app.post("/api/orders", async (req, res) => {
     };
 
     // Emitir evento de nueva orden
-    io.emit("new_order", {
-      id: orderId,
-      user_id: userId,
-      products, // Asegúrate de que aquí esté un array completo de productos
-      created_at: new Date().toISOString(),
-      status: "Pendiente",
-    });
-    
+    io.emit("new_order", newOrder);
     console.log("Nueva orden emitida por WebSocket:", newOrder);
 
     res.status(201).json({ message: "Pedido registrado con éxito.", orderId });
