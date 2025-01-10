@@ -28,11 +28,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Configuración de WebSockets
 const io = new Server(server, {
   cors: {
-    origin: ["https://monraspgit.github.io", "http://localhost:3000"], // Agrega localhost aquí
+    origin: ["https://monraspgit.github.io", "http://localhost:3000"], // Dominio permitido
     methods: ["GET", "POST"], // Métodos permitidos
   },
 });
-
 
 
 
@@ -188,13 +187,10 @@ app.delete('/api/products/:id', async (req, res) => {
 app.post("/api/products", async (req, res) => {
   const { name, barcode, price, description, image } = req.body;
 
+  console.log("Datos recibidos en el backend:", req.body); // Log para verificar datos recibidos
+
   if (!name || !barcode) {
     return res.status(400).json({ error: "El nombre y el código de barras son obligatorios." });
-  }
-
-  // Validación adicional para evitar datos corruptos en el código de barras
-  if (typeof barcode !== "string" || !/^\d+$/.test(barcode)) {
-    return res.status(400).json({ error: "El código de barras debe ser un número válido." });
   }
 
   try {
@@ -205,10 +201,12 @@ app.post("/api/products", async (req, res) => {
     const [result] = await db.query(query, [
       name,
       barcode,
-      price || 0,
-      description || "",
-      image || null,
+      price || 0, // Valor predeterminado
+      description || "", // Cadena vacía si no hay descripción
+      image || null, // null si no hay imagen
     ]);
+
+    console.log("Producto guardado en la base de datos con éxito:", { name, barcode }); // Log para confirmar éxito
 
     res.status(201).json({ message: "Producto guardado con éxito.", productId: result.insertId });
   } catch (err) {
