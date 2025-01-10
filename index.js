@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 // Configuración de CORS
 const corsOptions = {
-  origin: ["https://monraspgit.github.io"], // Lista blanca de dominios permitidos
+  origin: ["https://monraspgit.github.io", "http://localhost:3000"], // Agrega localhost aquí
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -28,10 +28,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Configuración de WebSockets
 const io = new Server(server, {
   cors: {
-    origin: "https://monraspgit.github.io", // Dominio permitido
+    origin: ["https://monraspgit.github.io", "http://localhost:3000"], // Agrega localhost aquí
     methods: ["GET", "POST"], // Métodos permitidos
   },
 });
+
 
 
 
