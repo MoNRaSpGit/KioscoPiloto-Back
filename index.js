@@ -192,6 +192,11 @@ app.post("/api/products", async (req, res) => {
     return res.status(400).json({ error: "El nombre y el código de barras son obligatorios." });
   }
 
+  // Validación adicional para evitar datos corruptos en el código de barras
+  if (typeof barcode !== "string" || !/^\d+$/.test(barcode)) {
+    return res.status(400).json({ error: "El código de barras debe ser un número válido." });
+  }
+
   try {
     const query = `
       INSERT INTO products (name, barcode, price, description, image)
@@ -200,9 +205,9 @@ app.post("/api/products", async (req, res) => {
     const [result] = await db.query(query, [
       name,
       barcode,
-      price || 0, // Valor predeterminado
-      description || "", // Cadena vacía si no hay descripción
-      image || null, // null si no hay imagen
+      price || 0,
+      description || "",
+      image || null,
     ]);
 
     res.status(201).json({ message: "Producto guardado con éxito.", productId: result.insertId });
@@ -211,6 +216,7 @@ app.post("/api/products", async (req, res) => {
     res.status(500).json({ error: "Error al guardar el producto." });
   }
 });
+
 
 
 // Endpoint para obtener productos
