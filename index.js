@@ -12,10 +12,10 @@ const server = http.createServer(app);
 
 // Configuración de CORS
 const corsOptions = {
-  origin: ["https://monraspgit.github.io", "http://localhost:3000"], // Agrega localhost aquí
+  origin: ["https://monraspgit.github.io", "http://localhost:3000"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  credentials: true, // Esto permite que las cookies o credenciales se incluyan en la solicitud
 };
 
 
