@@ -25,7 +25,7 @@ const corsOptions = {
   credentials: true, // Permite cookies y credenciales
 };
 
-//https://monraspgit.github.io/MercadoYa
+
 
 app.use(cors(corsOptions));
 
