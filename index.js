@@ -12,11 +12,22 @@ const server = http.createServer(app);
 
 // Configuración de CORS
 const corsOptions = {
-  origin: ["https://monraspgit.github.io", "http://localhost:3000"],
+  origin: (origin, callback) => {
+    const allowedOrigins = ["https://monraspgit.github.io", "http://localhost:3000"];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // Esto permite que las cookies o credenciales se incluyan en la solicitud
+  credentials: true, // Permite cookies y credenciales
 };
+
+
+app.use(cors(corsOptions));
+
 
 
 app.use(cors(corsOptions));
