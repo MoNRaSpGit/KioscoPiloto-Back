@@ -231,24 +231,27 @@ app.post("/api/products", async (req, res) => {
 
 
 
-// Endpoint para obtener productos
-app.get("/api/products", async (req, res) => {
+// Endpoint para obtener productos sin imagen
+app.get('/api/products', async (req, res) => {
   try {
-    const [results] = await db.query("SELECT * FROM products");
+    // Consulta que omite las imágenes
+    const [results] = await db.query(`SELECT id, name, barcode, price, description FROM products`);
 
+    // Mapeo de los resultados para garantizar valores predeterminados
     const products = results.map((product) => ({
       ...product,
-      price: product.price || 0, // Precio predeterminado
-      description: product.description || "", // Descripción predeterminada
-      image: product.image || null, // Imagen predeterminada
+      price: product.price || 0, // Precio predeterminado si es null
+      description: product.description || "", // Descripción predeterminada si es null
     }));
 
+    // Respuesta con los productos
     res.json(products);
   } catch (err) {
-    console.error("Error al obtener los productos:", err);
-    res.status(500).json({ error: "Error al obtener los productos." });
+    console.error('Error al obtener los productos:', err);
+    res.status(500).json({ error: 'Error al obtener los productos.' });
   }
 });
+
 
 
 
