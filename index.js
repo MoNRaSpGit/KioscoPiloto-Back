@@ -231,6 +231,7 @@ app.post("/api/products", async (req, res) => {
 
 
 
+// Endpoint para obtener productos sin imagen
 // Endpoint para obtener productos con imagen
 app.get('/api/products', async (req, res) => {
   try {
@@ -252,7 +253,6 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener los productos.' });
   }
 });
-
 
 
 
