@@ -231,17 +231,18 @@ app.post("/api/products", async (req, res) => {
 
 
 
-// Endpoint para obtener productos sin imagen
+// Endpoint para obtener productos con imagen
 app.get('/api/products', async (req, res) => {
   try {
-    // Consulta que omite las imágenes
-    const [results] = await db.query(`SELECT id, name, barcode, price, description FROM products`);
+    // Consulta que incluye las imágenes
+    const [results] = await db.query(`SELECT id, name, barcode, price, description, image FROM products`);
 
     // Mapeo de los resultados para garantizar valores predeterminados
     const products = results.map((product) => ({
       ...product,
       price: product.price || 0, // Precio predeterminado si es null
       description: product.description || "", // Descripción predeterminada si es null
+      image: product.image || "", // Imagen predeterminada si es null
     }));
 
     // Respuesta con los productos
