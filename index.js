@@ -231,7 +231,7 @@ app.post("/api/products", async (req, res) => {
 
 
 
-// Endpoint para obtener productos sin imagen
+
 // Endpoint para obtener productos con imagen
 app.get('/api/products', async (req, res) => {
   try {
@@ -265,17 +265,28 @@ app.get("/api/orders", async (req, res) => {
   console.log("Solicitud GET recibida en '/api/orders'");
 
   const query = `
-    SELECT o.id, o.created_at, o.status, 
-           JSON_ARRAYAGG(JSON_OBJECT(
-             'id', d.product_id, 
-             'name', p.name, 
-             'price', d.price, 
-             'quantity', d.quantity
-           )) AS productos
-    FROM orders o
-    JOIN order_details d ON o.id = d.order_id
-    JOIN products p ON p.id = d.product_id
-    GROUP BY o.id;
+    SELECT 
+      o.id AS id, 
+      o.user_id,
+      o.created_at, 
+      o.status, 
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'product_id', d.product_id, 
+          'name', p.name, 
+          'price', d.price, 
+          'quantity', d.quantity, 
+          'total_price', d.price * d.quantity
+        )
+      ) AS products
+    FROM 
+      orders o
+    JOIN 
+      order_details d ON o.id = d.order_id
+    JOIN 
+      products p ON d.product_id = p.id
+    GROUP BY 
+      o.id, o.user_id, o.created_at, o.status;
   `;
 
   try {
@@ -285,13 +296,20 @@ app.get("/api/orders", async (req, res) => {
       return res.status(404).json({ message: "No hay pedidos disponibles." });
     }
 
-    console.log("Pedidos obtenidos correctamente:", results);
-    res.json(results);
+    // Asegúrate de no aplicar JSON.parse si ya es un objeto
+    const pedidosConProductos = results.map((pedido) => ({
+      ...pedido,
+      products: typeof pedido.products === "string" ? JSON.parse(pedido.products) : pedido.products,
+    }));
+
+    console.log("Pedidos obtenidos correctamente:", pedidosConProductos);
+    res.json(pedidosConProductos);
   } catch (err) {
     console.error("Error al obtener los pedidos:", err);
     res.status(500).json({ error: "Error al obtener los pedidos." });
   }
 });
+
 
 
 
@@ -389,10 +407,13 @@ app.post("/api/orders", async (req, res) => {
     io.emit("new_order", {
       id: orderId,
       user_id: userId,
-      products, // Asegúrate de que aquí esté un array completo de productos
+      products, // con "s"
       created_at: new Date().toISOString(),
       status: "Pendiente",
     });
+    
+    
+    
     
     console.log("Nueva orden emitida por WebSocket:", newOrder);
 
@@ -405,8 +426,10 @@ app.post("/api/orders", async (req, res) => {
 
 
 // Endpoint para actualizar el estado del pedido
+// app.put("/api/orders/:id/status", async (req, res) => { ... })
+
 app.put("/api/orders/:id/status", async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params;       // el pedido se identifica por 'id'
   const { status } = req.body;
 
   if (!["Pendiente", "Procesando", "Listo"].includes(status)) {
@@ -414,13 +437,16 @@ app.put("/api/orders/:id/status", async (req, res) => {
   }
 
   try {
-    const [result] = await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+    const [result] = await db.query(
+      "UPDATE orders SET status = ? WHERE id = ?",
+      [status, id]
+    );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Pedido no encontrado." });
     }
 
-    // Emitir evento de actualización de estado
+    // Notificar a todos los clientes WebSocket sobre el cambio de estado
     io.emit("order_status_updated", { id, status });
     console.log(`Estado del pedido ${id} actualizado a ${status}`);
 
@@ -432,11 +458,13 @@ app.put("/api/orders/:id/status", async (req, res) => {
 });
 
 
+
 // Configurar el puerto
 const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
 
 
