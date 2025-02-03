@@ -261,51 +261,41 @@ app.get('/api/products', async (req, res) => {
 
 
 // Endpoint para obtener pedidos
+// Endpoint para obtener pedidos con imagen de productos
 app.get("/api/orders", async (req, res) => {
-  console.log("Solicitud GET recibida en '/api/orders'");
-
-  const query = `
-    SELECT 
-      o.id AS id, 
-      o.user_id,
-      o.created_at, 
-      o.status, 
-      JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'product_id', d.product_id, 
-          'name', p.name, 
-          'price', d.price, 
-          'quantity', d.quantity, 
-          'total_price', d.price * d.quantity
-        )
-      ) AS products
-    FROM 
-      orders o
-    JOIN 
-      order_details d ON o.id = d.order_id
-    JOIN 
-      products p ON d.product_id = p.id
-    GROUP BY 
-      o.id, o.user_id, o.created_at, o.status;
-  `;
-
   try {
-    const [results] = await db.query(query);
+    console.log("📥 Solicitud GET recibida en '/api/orders'");
 
-    if (results.length === 0) {
+    // 1️⃣ Obtener todos los pedidos SIN productos
+    const [orders] = await db.query(`
+      SELECT id, user_id, created_at, status 
+      FROM orders 
+      ORDER BY created_at DESC
+    `);
+
+    if (orders.length === 0) {
       return res.status(404).json({ message: "No hay pedidos disponibles." });
     }
 
-    // Asegúrate de no aplicar JSON.parse si ya es un objeto
-    const pedidosConProductos = results.map((pedido) => ({
+    // 2️⃣ Obtener los productos de cada pedido (SIN agrupar)
+    const [orderDetails] = await db.query(`
+      SELECT d.order_id, d.product_id, p.name, p.image, d.price, d.quantity 
+      FROM order_details d
+      JOIN products p ON d.product_id = p.id
+    `);
+
+    // 3️⃣ Mapear los productos a cada pedido
+    const pedidosConProductos = orders.map((pedido) => ({
       ...pedido,
-      products: typeof pedido.products === "string" ? JSON.parse(pedido.products) : pedido.products,
+      products: orderDetails
+        .filter((detail) => detail.order_id === pedido.id)
+        .map(({ order_id, ...rest }) => rest), // Quitamos el `order_id`
     }));
 
-    console.log("Pedidos obtenidos correctamente:", pedidosConProductos);
+    console.log("✅ Pedidos obtenidos correctamente:", pedidosConProductos);
     res.json(pedidosConProductos);
   } catch (err) {
-    console.error("Error al obtener los pedidos:", err);
+    console.error("❌ Error al obtener los pedidos:", err);
     res.status(500).json({ error: "Error al obtener los pedidos." });
   }
 });
@@ -371,56 +361,55 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+
+
 // Endpoint para registrar un pedido
 app.post("/api/orders", async (req, res) => {
   const { userId, products } = req.body;
 
-  if (!userId || !products || products.length === 0) {
+  // ✅ Validar que userId y products sean correctos
+  if (!userId || !Array.isArray(products) || products.length === 0) {
     return res.status(400).json({ error: "Datos inválidos para el pedido." });
   }
 
   try {
+    // 🔴 Insertar la orden en la tabla 'orders'
     const [orderResult] = await db.query("INSERT INTO orders (user_id) VALUES (?)", [userId]);
     const orderId = orderResult.insertId;
 
-    const orderDetailsData = products.map((product) => [
-      orderId,
-      product.id,
-      product.quantity,
-      product.price,
-    ]);
+    // 🔴 Asegurar que los productos tienen la estructura correcta
+    const orderDetailsData = products
+      .filter((product) => product.id && product.quantity > 0 && product.price >= 0) // Validaciones
+      .map((product) => [orderId, product.id, product.quantity, product.price]);
 
+    if (orderDetailsData.length === 0) {
+      return res.status(400).json({ error: "Productos inválidos en el pedido." });
+    }
+
+    // 🔴 Insertar los productos en la tabla 'order_details'
     await db.query(
       `INSERT INTO order_details (order_id, product_id, quantity, price) VALUES ?`,
       [orderDetailsData]
     );
 
+    // ✅ Construir el objeto del nuevo pedido para la respuesta y WebSocket
     const newOrder = {
       id: orderId,
-      user_id: userId,
+      userId,
       products,
       created_at: new Date().toISOString(),
       status: "Pendiente",
     };
 
-    // Emitir evento de nueva orden
-    io.emit("new_order", {
-      id: orderId,
-      user_id: userId,
-      products, // con "s"
-      created_at: new Date().toISOString(),
-      status: "Pendiente",
-    });
-    
-    
-    
-    
-    console.log("Nueva orden emitida por WebSocket:", newOrder);
+    // ✅ Emitir evento WebSocket para actualizar en tiempo real
+    io.emit("new_order", newOrder);
 
-    res.status(201).json({ message: "Pedido registrado con éxito.", orderId });
+    console.log("✅ Nueva orden emitida por WebSocket:", newOrder);
+
+    res.status(201).json({ message: "Pedido registrado con éxito.", order: newOrder });
   } catch (err) {
-    console.error("Error al registrar el pedido:", err);
-    res.status(500).json({ error: "Error al registrar el pedido." });
+    console.error("❌ Error al registrar el pedido:", err);
+    res.status(500).json({ error: "Error interno al registrar el pedido." });
   }
 });
 
